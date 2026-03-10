@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: request-service
+  namespace: carpooling
+  labels:
+    app: request-service
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: request-service
+  template:
+    metadata:
+      labels:
+        app: request-service
+        version: v1
+    spec:
+      serviceAccountName: request-service
+      containers:
+      - name: request-service
+        image: ${ECR_REGISTRY}/g03-carpooling/production/request-service:${IMAGE_TAG}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9091
+          name: metrics
+          protocol: TCP
+        env:
+        - name: HTTP_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: HTTP_ADDR
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: AWS_REGION
+        - name: DB_SECRET_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: DB_SECRET_ARN
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: DB_NAME
+        - name: DB_USER
+          value: "dbadmin"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rds-db-credentials
+              key: password
+        - name: DB_SSL_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: DB_SSL_MODE
+        - name: SNS_MATCH_CREATED_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: SNS_MATCH_CREATED_ARN
+        - name: SNS_MATCH_CANCELLED_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: SNS_MATCH_CANCELLED_ARN
+        - name: EXTERNAL_AWS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: external-aws-credentials
+              key: sns-access-key
+        - name: EXTERNAL_AWS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: external-aws-credentials
+              key: sns-secret-key
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: request-service-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /requests/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /requests/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      terminationGracePeriodSeconds: 30
+

@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matching-service
+  namespace: carpooling
+  labels:
+    app: matching-service
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-service
+  template:
+    metadata:
+      labels:
+        app: matching-service
+        version: v1
+    spec:
+      serviceAccountName: matching-service
+      containers:
+      - name: matching-service
+        image: ${ECR_REGISTRY}/g03-carpooling/production/matching-service:${IMAGE_TAG}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+          name: http
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        env:
+        - name: HTTP_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: HTTP_ADDR
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: AWS_REGION
+        - name: DB_SECRET_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: DB_SECRET_ARN
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: DB_NAME
+        - name: DB_USER
+          value: "dbadmin"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rds-db-credentials
+              key: password
+        - name: DB_SSL_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: DB_SSL_MODE
+        - name: SQS_TRIP_AVAILABLE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: SQS_TRIP_AVAILABLE_URL
+        - name: SQS_TRIP_AVAILABLE_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: external-aws-credentials
+              key: sqs-trip-available-access-key
+        - name: SQS_TRIP_AVAILABLE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: external-aws-credentials
+              key: sqs-trip-available-secret-key
+        - name: SQS_UPDATE_OFFER_URL
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: SQS_UPDATE_OFFER_URL
+        - name: SQS_UPDATE_OFFER_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: external-aws-credentials
+              key: sqs-update-offer-access-key
+        - name: SQS_UPDATE_OFFER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: external-aws-credentials
+              key: sqs-update-offer-secret-key
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: matching-service-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /matches/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /matches/ready
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      terminationGracePeriodSeconds: 30
+

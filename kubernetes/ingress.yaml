@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: carpooling-ingress
+  namespace: carpooling
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-2016-08
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:907956875716:certificate/7968dee0-2ca3-48f8-86f9-a0f5817a0a71
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - path: /requests
+        pathType: Prefix
+        backend:
+          service:
+            name: request-service
+            port:
+              number: 80
+      - path: /matches
+        pathType: Prefix
+        backend:
+          service:
+            name: matching-service
+            port:
+              number: 80
+      - path: /monitor
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
+
+

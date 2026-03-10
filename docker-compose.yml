@@ -1,0 +1,18 @@
+services:
+  request-service:
+    build: ./request-service
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./request-service/requests.db:/app/requests.db
+    environment:
+      - HTTP_ADDR=:8080
+
+  matching-service:
+    build: ./matching-service
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./matching-service/matches.db:/app/matches.db
+    environment:
+      - HTTP_ADDR=:8081

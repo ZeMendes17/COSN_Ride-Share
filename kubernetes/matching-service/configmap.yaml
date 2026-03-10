@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matching-service-config
+  namespace: carpooling
+data:
+  HTTP_ADDR: ":8081"
+  AWS_REGION: "us-east-1"
+  DB_SECRET_ARN: ${DB_SECRET_ARN}
+  DB_HOST: ${DB_HOST}
+  DB_PORT: "5432"
+  DB_NAME: ${DB_NAME}
+  DB_SSL_MODE: "require"
+  SQS_TRIP_AVAILABLE_URL: "https://sqs.us-east-1.amazonaws.com/670636167354/offer_tripAvailable_event-request_match_service"
+  SQS_UPDATE_OFFER_URL: "https://sqs.us-east-1.amazonaws.com/670636167354/offer_updateOffer_event-request_match_service"
+  LOG_LEVEL: "info"
+

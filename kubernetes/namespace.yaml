@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: carpooling
+  labels:
+    name: carpooling
+    environment: production
+
